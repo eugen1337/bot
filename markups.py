@@ -19,7 +19,14 @@ keyboard_signs = [
     ['Capricorn — Козерог', 'Aquarius — Водолей ', 'Pisces — Рыбы']
 ]
 
-markup_start = ReplyKeyboardMarkup(keyboard_start, one_time_keyboard=False)
-markup_signs = ReplyKeyboardMarkup(keyboard_signs, one_time_keyboard=False)
-markup_lng = ReplyKeyboardMarkup(keyboard_languages, one_time_keyboard=False)
-markup_times = ReplyKeyboardMarkup(keyboard_times, one_time_keyboard=False)
+markup_start = ReplyKeyboardMarkup(keyboard_start, one_time_keyboard=False,
+                                   resize_keyboard=True)
+
+markup_signs = ReplyKeyboardMarkup(keyboard_signs, one_time_keyboard=False,
+                                   resize_keyboard=True)
+
+markup_lng = ReplyKeyboardMarkup(keyboard_languages, one_time_keyboard=False,
+                                 resize_keyboard=True)
+
+markup_times = ReplyKeyboardMarkup(keyboard_times, one_time_keyboard=False,
+                                   resize_keyboard=True)

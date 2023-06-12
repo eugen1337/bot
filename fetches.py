@@ -26,10 +26,6 @@ async def fetch_compatibility(context):
 
     return await get_response(url, headers, params)
 
-    # if not response['response']['GeoObjectCollection']['featureMember']:
-    #     await update.message.reply_text('No such objects founded')
-    #     return
-
 
 async def fetch_horoscope(context):
     # https://horo.mail.ru/prediction/libra/tomorrow/
@@ -39,10 +35,6 @@ async def fetch_horoscope(context):
            context.user_data['time'].lower())
 
     return await get_response(url, headers={}, params={}, type='html')
-
-    # if not response['response']['GeoObjectCollection']['featureMember']:
-    #     await update.message.reply_text('No such objects founded')
-    #     return
 
 
 async def get_response(url, headers, params, type='json'):
