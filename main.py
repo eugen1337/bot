@@ -1,28 +1,12 @@
-import aiohttp
 from telegram.ext import (Application, MessageHandler,
                           filters, ConversationHandler, CommandHandler)
-from telegram import ReplyKeyboardMarkup
-from tokens import TG_TOKEN, RAPID_KEY
+from tokens import TG_TOKEN
 from deep_translator import GoogleTranslator
 
-keyboard_start = [
-    ['/Compatibility', '/Phrase']
-]
+from bs4 import BeautifulSoup
 
-keyboard_languages = [
-    ['russian', 'english', 'france', 'deutsch', 'exit']
-]
-
-keyboard_signs = [
-    ['Aries — Овен', 'Taurus — Телец', 'Gemini — Близнецы'],
-    ['Cancer — Рак', 'Leo — Лев', 'Virgo — Дева'],
-    ['Libra — Весы', 'Scorpio — Скорпион', 'Sagittarius — Стрелец'],
-    ['Capricorn — Козерог', 'Aquarius — Водолей ', 'Pisces — Рыбы']
-]
-
-markup_start = ReplyKeyboardMarkup(keyboard_start, one_time_keyboard=False)
-markup_signs = ReplyKeyboardMarkup(keyboard_signs, one_time_keyboard=False)
-markup_lng = ReplyKeyboardMarkup(keyboard_languages, one_time_keyboard=False)
+from markups import markup_start, markup_signs, markup_lng, markup_times
+from fetches import fetch_phrase, fetch_compatibility, fetch_horoscope
 
 
 async def ask_phrase_lng(update, context):
@@ -36,21 +20,6 @@ async def phrase(update, context):
     translated = GoogleTranslator(source='en', target=lang).translate(text)
     await update.message.reply_text(translated, reply_markup=markup_start)
     return ConversationHandler.END
-
-
-async def fetch_phrase():
-    url = "https://horoscope-astrology.p.rapidapi.com/dailyphrase"
-
-    headers = {
-        "X-RapidAPI-Key": RAPID_KEY,
-        "X-RapidAPI-Host": "horoscope-astrology.p.rapidapi.com"
-    }
-
-    params = {}
-
-    json_resp = await get_response(url=url, headers=headers, params=params)
-
-    return json_resp
 
 
 async def start(update, context):
@@ -89,25 +58,9 @@ async def stop(update, context):
 
 
 async def get_compatibility(update, context):
-    url = "https://horoscope-astrology.p.rapidapi.com/affinity"
-
-    params = {"sign1": context.user_data['first sign'],
-              "sign2": context.user_data['second sign']}
-
-    headers = {
-        "X-RapidAPI-Key": RAPID_KEY,
-        "X-RapidAPI-Host": "horoscope-astrology.p.rapidapi.com"
-    }
-
-    json_resp = await get_response(url, headers, params)
-
-    # if not response['response']['GeoObjectCollection']['featureMember']:
-    #     await update.message.reply_text('No such objects founded')
-    #     return
-
     text = ''
 
-    for i in json_resp:
+    for i in await fetch_compatibility(context=context):
         text += i['text']
 
     translated = GoogleTranslator(source='en', target='ru').translate(text)
@@ -115,10 +68,42 @@ async def get_compatibility(update, context):
     await update.message.reply_text(translated)
 
 
-async def get_response(url, headers, params):
-    async with aiohttp.ClientSession(headers=headers) as session:
-        async with session.get(url=url, params=params) as resp:
-            return await resp.json()
+async def start_horo(update, context):
+    text = 'Choose sign you want to know'
+    await update.message.reply_text(text, reply_markup=markup_signs)
+
+    return 1
+
+
+async def get_sign(update, context):
+    context.user_data['sign'] = update.message.text.split(' —')[0]
+    text = 'Choose time'
+    await update.message.reply_text(text, reply_markup=markup_times)
+
+    return 2
+
+
+async def get_time(update, context):
+    context.user_data['time'] = update.message.text
+    await update.message.reply_text(
+        f"{context.user_data['sign']} horoscope for {context.user_data['time']}:\n",
+        reply_markup=markup_start
+    )
+    await get_horoscope(update=update, context=context)
+
+    return ConversationHandler.END
+
+
+async def get_horoscope(update, context):
+    page = await fetch_horoscope(context=context)
+
+    soup = BeautifulSoup(page, "html.parser")
+    HTML_cls = 'article__item article__item_alignment_left article__item_html'
+    horo = soup.find('div', class_=HTML_cls)
+
+    print(horo.text)
+
+    await update.message.reply_text(horo.text)
 
 
 def main():
@@ -148,6 +133,18 @@ def main():
         fallbacks=[CommandHandler('exit', stop)]
     )
     application.add_handler(conv_handler_phrase)
+
+    conv_handler_horo = ConversationHandler(
+        entry_points=[CommandHandler('Horoscope', start_horo)],
+
+        states={
+            1: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_sign)],
+            2: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time)],
+        },
+
+        fallbacks=[CommandHandler('exit', stop)]
+    )
+    application.add_handler(conv_handler_horo)
 
     application.run_polling()
 
