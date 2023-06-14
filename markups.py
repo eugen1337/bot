@@ -1,15 +1,15 @@
 from telegram import ReplyKeyboardMarkup
 
 keyboard_start = [
-    ['/Compatibility', '/Phrase', '/Horoscope']
+    ['/Compatibility', '/Phrase', '/Horoscope', '/Joke']
 ]
 
 keyboard_languages = [
-    ['russian', 'english', 'france', 'deutsch', 'exit']
+    ['Русский', 'Английский', 'Французский', 'Немецкий']
 ]
 
 keyboard_times = [
-    ['today', 'tomorrow', 'week', 'month', 'year']
+    ['Сегодня', 'Завтра', 'Неделя', 'Месяц', 'Год']
 ]
 
 keyboard_signs = [

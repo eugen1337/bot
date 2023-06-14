@@ -3,7 +3,14 @@ from telegram.ext import (Application, MessageHandler,
 from tokens import TG_TOKEN, PATH
 
 from markups import markup_start, markup_signs, markup_lng, markup_times
-from model import get_compatibility, get_horoscope, get_phrase
+from model import get_compatibility, get_horoscope, get_phrase, get_joke
+
+
+async def joke(update, context):
+    text = (await get_joke(context=context))[0]
+    await update.message.reply_text(text, reply_markup=markup_start)
+
+    log(update, update.message.text, text)
 
 
 async def ask_phrase_lng(update, context):
@@ -16,7 +23,7 @@ async def ask_phrase_lng(update, context):
 
 
 async def phrase(update, context):
-    context.user_data['lang'] = update.message.text[:2]
+    context.user_data['lang'] = update.message.text
     text = await get_phrase(context)
     await update.message.reply_text(text, reply_markup=markup_start)
 
@@ -26,7 +33,7 @@ async def phrase(update, context):
 
 
 async def start(update, context):
-    text = 'Hello'
+    text = 'Здравствуйте, я бот по астрологии'
     await update.message.reply_text(text, reply_markup=markup_start)
 
     log(update, update.message.text, text)
@@ -42,7 +49,7 @@ async def stop(update, context):
 
 
 async def start_compatibility(update, context):
-    text = 'Choose first sign'
+    text = 'Выберите первый знак зодиака'
     await update.message.reply_text(text, reply_markup=markup_signs)
 
     log(update, update.message.text, text)
@@ -52,7 +59,7 @@ async def start_compatibility(update, context):
 
 async def first_sign(update, context):
     context.user_data['first sign'] = update.message.text.split(' —')[0]
-    text = 'Choose second sign'
+    text = 'Выберите второй знак зодиака'
     await update.message.reply_text(text, reply_markup=markup_signs)
 
     log(update, update.message.text, text)
@@ -63,7 +70,7 @@ async def first_sign(update, context):
 async def second_sign(update, context):
     context.user_data['second sign'] = update.message.text.split(' —')[0]
 
-    text = '{} compatibility with {}:\n'.format(
+    text = 'Совместимость {} и {}:\n'.format(
         context.user_data['first sign'],
         context.user_data['second sign']
     ) + await get_compatibility(context=context)
@@ -76,7 +83,7 @@ async def second_sign(update, context):
 
 
 async def start_horo(update, context):
-    text = 'Choose sign you want to know'
+    text = 'Выберите знак зодиака'
     await update.message.reply_text(text, reply_markup=markup_signs)
 
     log(update, update.message.text, text)
@@ -86,7 +93,7 @@ async def start_horo(update, context):
 
 async def get_sign(update, context):
     context.user_data['sign'] = update.message.text.split(' —')[0]
-    text = 'Choose time'
+    text = 'Выберите период'
     await update.message.reply_text(text, reply_markup=markup_times)
 
     log(update, update.message.text, text)
@@ -97,7 +104,7 @@ async def get_sign(update, context):
 async def get_time(update, context):
     context.user_data['time'] = update.message.text
 
-    text = '{} horoscope for {}:\n'.format(
+    text = 'Гороскоп для {} за период - {}:\n'.format(
         context.user_data['sign'],
         context.user_data['time']
     ) + await get_horoscope(context=context)
@@ -110,17 +117,19 @@ async def get_time(update, context):
 
 
 def log(update, user_text, bot_text):
-    with open(PATH + str(update.message.from_user.id),
-              'a+',
+    with open(PATH + str(update.message.from_user.id) + '.log',
+              'a',
               encoding='utf-8') as file:
-        file.write(user_text + '\n')
-        file.write(bot_text + '\n\n')
+        file.write('User: ' + user_text + '\n')
+        file.write('Bot: ' + bot_text + '\n\n')
 
 
 def main():
     application = Application.builder().token(TG_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
+
+    application.add_handler(CommandHandler('Joke', joke))
 
     conv_handler_signs = ConversationHandler(
         entry_points=[CommandHandler('Compatibility', start_compatibility)],

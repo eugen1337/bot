@@ -27,6 +27,18 @@ async def fetch_compatibility(context):
     return await get_response(url, headers, params)
 
 
+async def fetch_joke():
+    u = "https://matchilling-chuck-norris-jokes-v1.p.rapidapi.com/jokes/random"
+
+    headers = {
+        "accept": "application/json",
+        "X-RapidAPI-Key": "1ae4315f08mshf21ff730e37ac66p1e7327jsnd25b38193dc5",
+        "X-RapidAPI-Host": "matchilling-chuck-norris-jokes-v1.p.rapidapi.com"
+    }
+
+    return await get_response(url=u, headers=headers, params={})
+
+
 async def fetch_horoscope(context):
     # https://horo.mail.ru/prediction/libra/tomorrow/
 
